@@ -52,10 +52,15 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setButtonText();
+        //Create a listview and connect it to the interface's list, the listview get data from list adapter.
         ble_device_list_adapter = new ListAdapter();
         ListView listView = (ListView) this.findViewById(R.id.deviceList);
         listView.setAdapter(ble_device_list_adapter);
+
+        //Create a scanner.
         ble_scanner = new BleScanner(this.getApplicationContext());
+
+        //Now the button wait and listen for click to action.
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
