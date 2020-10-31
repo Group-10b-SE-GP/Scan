@@ -26,6 +26,7 @@ import android.widget.Toast;
 
 import com.bluetooth.blueka.Constants;
 import com.bluetooth.blueka.R;
+import com.bluetooth.blueka.bluetooth.BleAdvertiser;
 import com.bluetooth.blueka.bluetooth.BleScanner;
 import com.bluetooth.blueka.bluetooth.ScanResultsConsumer;
 
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
     private Handler handler = new Handler();
     private ListAdapter ble_device_list_adapter;
     private BleScanner ble_scanner;
+    private BleAdvertiser ble_advertiser;
     private static final long SCAN_TIMEOUT = 5000;
     private static final int REQUEST_LOCATION = 0;
     private static String[] PERMISSION_LOCATION = {Manifest.permission.ACCESS_COARSE_LOCATION};
@@ -57,9 +59,11 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
         ListView listView = (ListView) this.findViewById(R.id.deviceList);
         listView.setAdapter(ble_device_list_adapter);
 
+
         //Create a scanner.
         ble_scanner = new BleScanner(this.getApplicationContext());
-
+        //Create a advertiser with server.
+        ble_advertiser =  new BleAdvertiser(this.getApplicationContext());
         //Now the button wait and listen for click to action.
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -78,8 +82,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
                 startActivity(intent);
             }
         });
-
-
+        ble_advertiser.startAdvertising();
     }
 
     @Override
@@ -98,7 +101,6 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
     @Override
     public void scanningStarted() {
         setScanState(true);
-
     }
 
     @Override
@@ -200,6 +202,8 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
                 permission_granted = true;
             }
             startScanning();
+
+
         }else{
             ble_scanner.stopScanning();
         }

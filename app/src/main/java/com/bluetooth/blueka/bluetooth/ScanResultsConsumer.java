@@ -6,3 +6,4 @@ public interface ScanResultsConsumer {
     public void scanningStarted();
     public void scanningStopped();
 }
+

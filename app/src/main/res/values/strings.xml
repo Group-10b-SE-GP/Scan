@@ -2,4 +2,5 @@
     <string name="app_name">BlueKa</string>
     <string name="screen_title_main">Device List</string>
     <string name="action_settings">Settings</string>
+    <string name="ble_uuid">7D2EA28A-F7BD-485A-BD9D-92AD6ECFE93E</string>
 </resources>
