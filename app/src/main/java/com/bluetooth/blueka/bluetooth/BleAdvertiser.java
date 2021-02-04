@@ -1,7 +1,10 @@
 package com.bluetooth.blueka.bluetooth;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
@@ -62,7 +65,7 @@ public class BleAdvertiser {
 
         ParcelUuid pUuid = new ParcelUuid(Constants.SERVICE_UUID);
         AdvertiseData data = new AdvertiseData.Builder()
-                .setIncludeDeviceName( true )
+                .setIncludeDeviceName( false )
                 .addServiceUuid( pUuid )
                 .build();
 
@@ -97,10 +100,44 @@ public class BleAdvertiser {
         this.advertising = advertising;
     }
 
-    private class GattServerCallback extends BluetoothGattServerCallback{}
+    private class GattServerCallback extends BluetoothGattServerCallback{
+        //write
+        public void onCharacteristicWriteRequest(BluetoothDevice device,
+                                                 int requestId,
+                                                 BluetoothGattCharacteristic characteristic,
+                                                 boolean preparedWrite,
+                                                 boolean responseNeeded,
+                                                 int offset,
+                                                 byte[] value) {
+            super.onCharacteristicWriteRequest(device,
+                    requestId,
+                    characteristic,
+                    preparedWrite,
+                    responseNeeded,
+                    offset,
+                    value);
+            if (characteristic.getUuid().equals(Constants.CHARACTERISTIC_ECHO_UUID)) {
+                mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+            }
+            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+            int length = value.length;
+            byte[] reversed = new byte[length];
+            for (int i = 0; i < length; i++) {
+                reversed[i] = value[length - (i + 1)];
+            }
+            characteristic.setValue(reversed);
+            mGattServer.notifyCharacteristicChanged(device, characteristic, false);
+        }
+    }
 
     private void setupServer(){
         BluetoothGattService service = new BluetoothGattService(Constants.SERVICE_UUID,BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        //write
+        BluetoothGattCharacteristic writeCharacteristic = new BluetoothGattCharacteristic(
+                Constants.CHARACTERISTIC_ECHO_UUID,
+                BluetoothGattCharacteristic.PROPERTY_WRITE,
+                BluetoothGattCharacteristic.PERMISSION_WRITE);
+        service.addCharacteristic(writeCharacteristic);
         mGattServer.addService(service);
     }
     private void stopServer(){
