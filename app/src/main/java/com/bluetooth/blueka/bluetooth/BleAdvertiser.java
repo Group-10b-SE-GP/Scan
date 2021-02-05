@@ -23,10 +23,11 @@ import androidx.core.content.ContextCompat;
 import com.bluetooth.blueka.Constants;
 import com.bluetooth.blueka.R;
 
+import java.lang.annotation.Target;
 import java.util.UUID;
 
 import static android.content.Context.BLUETOOTH_SERVICE;
-
+import static com.bluetooth.blueka.Constants.TAG;
 
 public class BleAdvertiser {
     private BluetoothLeAdvertiser advertiser;
@@ -116,6 +117,8 @@ public class BleAdvertiser {
                     responseNeeded,
                     offset,
                     value);
+            //advertiser will reverse the string and send it back to the scanner
+            Log.i(TAG,"inside on characterisitic write request in advertiser");
             if (characteristic.getUuid().equals(Constants.CHARACTERISTIC_ECHO_UUID)) {
                 mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
             }

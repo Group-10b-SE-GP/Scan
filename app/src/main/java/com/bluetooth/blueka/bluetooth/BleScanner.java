@@ -22,6 +22,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.bluetooth.blueka.Constants;
+import com.bluetooth.blueka.ui.MainActivity;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -135,7 +136,7 @@ public class BleScanner {
         mGatt = device.connectGatt(context, false, gattClientCallback);
         Log.i(TAG,"connected inside");
     }
-    
+
 
     private class GattClientCallback extends BluetoothGattCallback{
         @Override
@@ -165,15 +166,20 @@ public class BleScanner {
             }
             BluetoothGattService service = gatt.getService(Constants.SERVICE_UUID);
             BluetoothGattCharacteristic characteristic = service.getCharacteristic(Constants.CHARACTERISTIC_ECHO_UUID);
-            String message = "hello test blueka";
+            String message = "hello";
             byte[] messageBytes = new byte[0];
             try {
                 messageBytes = message.getBytes("UTF-8");
             } catch (UnsupportedEncodingException e) {
                 Log.e(TAG, "Failed to convert message string to byte array");
             }
+
             characteristic.setValue(messageBytes);
-            boolean success = mGatt.writeCharacteristic(characteristic);
+            boolean success = gatt.writeCharacteristic(characteristic);
+            // to add the write characteristic
+            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+            mInitialized = gatt.setCharacteristicNotification(characteristic, true);
+            //
             if(success){
                 Log.i(TAG,"success");
                 Toast.makeText(context,"success",Toast.LENGTH_SHORT).show();
@@ -185,6 +191,7 @@ public class BleScanner {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
+            Log.i(TAG, "entered into notified");
             byte[] messageBytes = characteristic.getValue();
             String messageString = null;
             try {
@@ -193,6 +200,7 @@ public class BleScanner {
                 Log.e(TAG, "Unable to convert message bytes to string");
                 Toast.makeText(context,"Not able to send", Toast.LENGTH_LONG).show();
             }
+            //receiving the message, will be reversed because the advertiser reverse it just to see the difference
             Log.d("Receive message", messageString);
             Toast.makeText(context,messageString,Toast.LENGTH_LONG).show();
         }
