@@ -17,6 +17,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.widget.Toast;
@@ -182,7 +183,6 @@ public class BleScanner {
             //
             if(success){
                 Log.i(TAG,"success");
-                Toast.makeText(context,"success",Toast.LENGTH_SHORT).show();
             }else{
                 Log.i(TAG, "not success");
             }
@@ -198,11 +198,17 @@ public class BleScanner {
                 messageString = new String(messageBytes, "UTF-8");
             } catch (UnsupportedEncodingException e) {
                 Log.e(TAG, "Unable to convert message bytes to string");
-                Toast.makeText(context,"Not able to send", Toast.LENGTH_LONG).show();
             }
             //receiving the message, will be reversed because the advertiser reverse it just to see the difference
             Log.d("Receive message", messageString);
-            Toast.makeText(context,messageString,Toast.LENGTH_LONG).show();
+            final String result = messageString;
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(context,result,Toast.LENGTH_LONG).show();
+                }
+            });
+
         }
     }
 
