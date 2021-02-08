@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.bluetooth.le.ScanResult;
@@ -44,7 +45,8 @@ public class BleScanner {
     private boolean mConnected = false;
     //write
     private boolean mInitialized = false;
-
+    private BleAdvertiser bleAdvertiser;
+    private Boolean checkScan = false;
     public BleScanner(Context context){
         this.context = context;
 
@@ -80,9 +82,14 @@ public class BleScanner {
                     Log.d(Constants.TAG, "Stopping scanning");
                     scanner.stopScan(scan_callback);
                     setScanning(false);
+                    if(checkScan != Boolean.TRUE){
+                        bleAdvertiser = new BleAdvertiser(context);
+                        bleAdvertiser.startAdvertising();
+                    }else{
+                        checkScan = false;
+                    }
                 }
             }
-
         }, stop_after_ms);
 
         this.scan_results_consumer = scan_results_consumer;
@@ -108,13 +115,14 @@ public class BleScanner {
     private ScanCallback scan_callback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
+            checkScan = true;
             if(!scanning){
                 return;
             }
-            scan_results_consumer.candidateBleDevice(result.getDevice(),result.getScanRecord().getBytes(),result.getRssi());
-            scanner.stopScan(scan_callback);
-            BluetoothDevice bluetoothDevice = result.getDevice();
-            connectDevice(bluetoothDevice);
+                scan_results_consumer.candidateBleDevice(result.getDevice(), result.getScanRecord().getBytes(), result.getRssi());
+                scanner.stopScan(scan_callback);
+                BluetoothDevice bluetoothDevice = result.getDevice();
+                connectDevice(bluetoothDevice);
         }
 
     };
@@ -208,12 +216,12 @@ public class BleScanner {
                     Toast.makeText(context,result,Toast.LENGTH_LONG).show();
                 }
             });
-
         }
     }
 
     public void disconnectGattServer(){
         mConnected = false;
+        mInitialized = false;
         if(mGatt != null){
             mGatt.disconnect();
             mGatt.close();

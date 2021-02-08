@@ -37,8 +37,8 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
     private Handler handler = new Handler();
     private ListAdapter ble_device_list_adapter;
     private BleScanner ble_scanner;
-    private BleAdvertiser ble_advertiser;
-    private static final long SCAN_TIMEOUT = 5000;
+    public BleAdvertiser ble_advertiser;
+    private static final long SCAN_TIMEOUT = 1200;
     private static final int REQUEST_LOCATION = 0;
     private static String[] PERMISSION_LOCATION = {Manifest.permission.ACCESS_COARSE_LOCATION};
     private boolean permission_granted = false;
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
                 startActivity(intent);
             }
         });
-        ble_advertiser.startAdvertising();
+        //ble_advertiser.startAdvertising();
     }
 
     @Override
@@ -203,7 +203,6 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
             }
             startScanning();
 
-
         }else{
             ble_scanner.stopScanning();
         }
@@ -264,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
                     ble_device_list_adapter.notifyDataSetChanged();
                 }
             });
-            simpleToast(Constants.SCANNING,2000);
+            simpleToast(Constants.SCANNING,1200);
             ble_scanner.startScanning(this, SCAN_TIMEOUT);
         }else{
             Log.i(Constants.TAG, "Permission to perform Bluetooth scanning was not yet granted");
