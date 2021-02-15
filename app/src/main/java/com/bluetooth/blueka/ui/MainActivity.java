@@ -44,6 +44,8 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
     private boolean permission_granted = false;
     private int device_count =0;
     private Toast toast;
+    private static MainActivity instance;
+
     static class ViewHolder{
         public TextView text;
         public TextView bdaddr;
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        instance = this;
         setContentView(R.layout.activity_main);
         setButtonText();
         //Create a listview and connect it to the interface's list, the listview get data from list adapter.
@@ -83,6 +86,10 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
             }
         });
         //ble_advertiser.startAdvertising();
+    }
+
+    public static MainActivity getInstance() {
+        return instance;
     }
 
     @Override

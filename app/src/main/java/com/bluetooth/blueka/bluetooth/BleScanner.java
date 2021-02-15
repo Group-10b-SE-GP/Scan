@@ -214,6 +214,7 @@ public class BleScanner {
                 @Override
                 public void run() {
                     Toast.makeText(context,result,Toast.LENGTH_LONG).show();
+                    //MainActivity.getInstance().test();
                 }
             });
         }
