@@ -50,7 +50,9 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
         public TextView text;
         public TextView bdaddr;
     }
-
+    //onCreate is called when you open the app.
+    //savedInstanceState is what the app store when it get closed before.
+    //
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
