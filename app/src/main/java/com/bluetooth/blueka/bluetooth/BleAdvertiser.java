@@ -25,6 +25,7 @@ import com.bluetooth.blueka.Constants;
 import com.bluetooth.blueka.Operation.OperationManager;
 import com.bluetooth.blueka.R;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -141,12 +142,16 @@ public class BleAdvertiser {
                 mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
             }
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
-            int length = value.length;
-            byte[] reversed = new byte[length];
-            for (int i = 0; i < length; i++) {
-                reversed[i] = value[length - (i + 1)];
+            int num_connected = mDevices.size();
+            String message = Integer.toString(num_connected);
+            byte[] reply = new byte[0];
+            try {
+                reply = message.getBytes("UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                Log.e(TAG, "Failed to convert message string to byte array");
             }
-            characteristic.setValue(reversed);
+
+            characteristic.setValue(reply);
             for(BluetoothDevice dev : mDevices) {
                 mGattServer.notifyCharacteristicChanged(dev, characteristic, false);
             }
