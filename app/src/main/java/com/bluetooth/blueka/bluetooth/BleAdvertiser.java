@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -21,21 +22,25 @@ import android.util.Log;
 import androidx.core.content.ContextCompat;
 
 import com.bluetooth.blueka.Constants;
+import com.bluetooth.blueka.Operation.OperationManager;
 import com.bluetooth.blueka.R;
 
 import java.lang.annotation.Target;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import static android.content.Context.BLUETOOTH_SERVICE;
 import static com.bluetooth.blueka.Constants.TAG;
 
 public class BleAdvertiser {
+    private OperationManager operationManager = new OperationManager();
     private BluetoothLeAdvertiser advertiser;
     private Handler hander = new Handler();
     private BluetoothManager mBluetoothManager;
     private BluetoothGattServer mGattServer;
     private Context context;
     private boolean advertising =  false;
+    private ArrayList<BluetoothDevice> mDevices = new ArrayList();
 
 
 
@@ -49,6 +54,18 @@ public class BleAdvertiser {
         mGattServer = mBluetoothManager.openGattServer(context, gattServerCallback);
         setupServer();
     }
+
+    private void setupServer(){
+        BluetoothGattService service = new BluetoothGattService(Constants.SERVICE_UUID,BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        //write
+        BluetoothGattCharacteristic writeCharacteristic = new BluetoothGattCharacteristic(
+                Constants.CHARACTERISTIC_ECHO_UUID,
+                BluetoothGattCharacteristic.PROPERTY_WRITE,
+                BluetoothGattCharacteristic.PERMISSION_WRITE);
+        service.addCharacteristic(writeCharacteristic);
+        mGattServer.addService(service);
+    }
+
     public void startAdvertising(){
         if(advertising){
             Log.d(Constants.TAG, "Already advertising");
@@ -103,6 +120,7 @@ public class BleAdvertiser {
 
     private class GattServerCallback extends BluetoothGattServerCallback{
         //write
+        @Override
         public void onCharacteristicWriteRequest(BluetoothDevice device,
                                                  int requestId,
                                                  BluetoothGattCharacteristic characteristic,
@@ -129,20 +147,28 @@ public class BleAdvertiser {
                 reversed[i] = value[length - (i + 1)];
             }
             characteristic.setValue(reversed);
-            mGattServer.notifyCharacteristicChanged(device, characteristic, false);
+            for(BluetoothDevice dev : mDevices) {
+                mGattServer.notifyCharacteristicChanged(dev, characteristic, false);
+            }
+        }
+        @Override
+        public void onConnectionStateChange (BluetoothDevice device,
+                                             int status,
+                                             int newState){
+            super.onConnectionStateChange(device, status, newState);
+            Log.i(TAG,"HEREWEGO");
+            if (newState == BluetoothProfile.STATE_CONNECTED){
+                if(!mDevices.contains(device)) {
+                    mDevices.add(device);
+                    Log.i(TAG,"Yes, device added");
+                }
+            }else if(newState == BluetoothProfile.STATE_DISCONNECTED){
+                mDevices.remove(device);
+            }
         }
     }
 
-    private void setupServer(){
-        BluetoothGattService service = new BluetoothGattService(Constants.SERVICE_UUID,BluetoothGattService.SERVICE_TYPE_PRIMARY);
-        //write
-        BluetoothGattCharacteristic writeCharacteristic = new BluetoothGattCharacteristic(
-                Constants.CHARACTERISTIC_ECHO_UUID,
-                BluetoothGattCharacteristic.PROPERTY_WRITE,
-                BluetoothGattCharacteristic.PERMISSION_WRITE);
-        service.addCharacteristic(writeCharacteristic);
-        mGattServer.addService(service);
-    }
+
     private void stopServer(){
         if(mGattServer != null){
             mGattServer.close();

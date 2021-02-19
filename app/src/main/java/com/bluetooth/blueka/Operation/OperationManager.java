@@ -5,11 +5,15 @@ import java.util.Queue;
 
 public class OperationManager {
     private Queue<Operation> operations = new LinkedList<>();
-    private Operation currentOp;
+    private Operation currentOp = null;
+    public OperationManager(){
+
+    }
     public synchronized void request(Operation operation){
         operations.add(operation);
         if(currentOp == null){
             currentOp = operations.poll();
+            currentOp.performOperation();
 
         }
     }
@@ -17,7 +21,7 @@ public class OperationManager {
         currentOp = null;
         if(operations.peek() != null){
             currentOp = operations.poll();
-
+            currentOp.performOperation();
         }
     }
 }

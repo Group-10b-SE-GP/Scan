@@ -1,11 +1,13 @@
 package com.bluetooth.blueka.Operation;
 
+import android.bluetooth.BluetoothGatt;
+
 public abstract class Operation {
-    public String serverID;
-    public Operation(String serverID){
-        this.serverID = serverID;
+    protected BluetoothGatt gatt;
+    public Operation(BluetoothGatt gatt){
+        this.gatt = gatt;
     }
-    public String getServerID(){
-        return serverID;
-    }
+    public abstract void performOperation();
+
+
 }

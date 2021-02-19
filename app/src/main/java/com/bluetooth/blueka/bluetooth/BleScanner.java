@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -24,6 +25,9 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.bluetooth.blueka.Constants;
+import com.bluetooth.blueka.Operation.DiscoverOperation;
+import com.bluetooth.blueka.Operation.OperationManager;
+import com.bluetooth.blueka.Operation.WriteRequestOperation;
 import com.bluetooth.blueka.ui.MainActivity;
 
 import java.io.UnsupportedEncodingException;
@@ -43,6 +47,7 @@ public class BleScanner {
     private boolean scanning = false;
     private String device_name_start = "";
     private boolean mConnected = false;
+    private OperationManager operationManager = new OperationManager();
     //write
     private boolean mInitialized = false;
     private BleAdvertiser bleAdvertiser;
@@ -161,7 +166,7 @@ public class BleScanner {
             if (newState == BluetoothProfile.STATE_CONNECTED){
                 mConnected = true;
                 //write
-                gatt.discoverServices();
+                operationManager.request(new DiscoverOperation(gatt));
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED){
                 disconnectGattServer();
             }
@@ -170,30 +175,12 @@ public class BleScanner {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status){
             super.onServicesDiscovered(gatt, status);
+            operationManager.operationCompleted();
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 return;
             }
-            BluetoothGattService service = gatt.getService(Constants.SERVICE_UUID);
-            BluetoothGattCharacteristic characteristic = service.getCharacteristic(Constants.CHARACTERISTIC_ECHO_UUID);
             String message = "hello";
-            byte[] messageBytes = new byte[0];
-            try {
-                messageBytes = message.getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                Log.e(TAG, "Failed to convert message string to byte array");
-            }
-
-            characteristic.setValue(messageBytes);
-            boolean success = gatt.writeCharacteristic(characteristic);
-            // to add the write characteristic
-            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-            mInitialized = gatt.setCharacteristicNotification(characteristic, true);
-            //
-            if(success){
-                Log.i(TAG,"success");
-            }else{
-                Log.i(TAG, "not success");
-            }
+            operationManager.request(new WriteRequestOperation(gatt, message));
         }
 
         @Override
@@ -217,6 +204,14 @@ public class BleScanner {
                     //MainActivity.getInstance().test();
                 }
             });
+        }
+        @Override
+        public void onCharacteristicWrite (BluetoothGatt gatt,
+                                           BluetoothGattCharacteristic characteristic,
+                                           int status){
+            super.onCharacteristicWrite(gatt, characteristic, status);
+            operationManager.operationCompleted();
+            Log.i(TAG,"YES, another queue works");
         }
     }
 
