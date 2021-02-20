@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
     private ListAdapter ble_device_list_adapter;
     private BleScanner ble_scanner;
     public BleAdvertiser ble_advertiser;
-    private static final long SCAN_TIMEOUT = 1200;
+    private static final long SCAN_TIMEOUT = 5000;
     private static final int REQUEST_LOCATION = 0;
     private static String[] PERMISSION_LOCATION = {Manifest.permission.ACCESS_COARSE_LOCATION};
     private boolean permission_granted = false;

@@ -25,7 +25,9 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.bluetooth.blueka.Constants;
+import com.bluetooth.blueka.Operation.DisconnectOperation;
 import com.bluetooth.blueka.Operation.DiscoverOperation;
+import com.bluetooth.blueka.Operation.GattCloseOperation;
 import com.bluetooth.blueka.Operation.OperationManager;
 import com.bluetooth.blueka.Operation.WriteRequestOperation;
 import com.bluetooth.blueka.ui.MainActivity;
@@ -47,15 +49,26 @@ public class BleScanner {
     private boolean scanning = false;
     private String device_name_start = "";
     private boolean mConnected = false;
-    private OperationManager operationManager = new OperationManager();
+    private OperationManager operationManager;
+    private GattClientCallback gattClientCallback;
     //write
     private boolean mInitialized = false;
     private BleAdvertiser bleAdvertiser;
     private Boolean checkScan = false;
+
+    private Runnable GattCloseRun= new Runnable(){
+        @Override
+        public void run()
+        {   operationManager.operationCompleted();
+            operationManager.request(new GattCloseOperation(mGatt));
+            operationManager.operationCompleted();
+        }
+    };
+
     public BleScanner(Context context){
         this.context = context;
-
-
+        operationManager = new OperationManager();
+        gattClientCallback = new GattClientCallback();
         final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 
         bluetooth_adapter = bluetoothManager.getAdapter();
@@ -74,6 +87,10 @@ public class BleScanner {
         if(scanning){
             Log.d(Constants.TAG, "Already scanning so ignoring startScanning request");
             return;
+        }
+        if(mConnected){
+
+            disconnectGattServer();
         }
         if(scanner == null){
             scanner = bluetooth_adapter.getBluetoothLeScanner();
@@ -146,7 +163,6 @@ public class BleScanner {
     }
 
     private void connectDevice(BluetoothDevice device){
-        GattClientCallback gattClientCallback = new GattClientCallback();
         mGatt = device.connectGatt(context, false, gattClientCallback);
         Log.i(TAG,"connected inside");
     }
@@ -168,7 +184,12 @@ public class BleScanner {
                 //write
                 operationManager.request(new DiscoverOperation(gatt));
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED){
-                disconnectGattServer();
+                handler.removeCallbacks(GattCloseRun);
+                operationManager.operationCompleted();
+                operationManager.request(new GattCloseOperation(mGatt));
+                operationManager.operationCompleted();
+                mConnected = false;
+                Log.i(TAG,"CLOSED GATT");
             }
         }
         //write
@@ -219,9 +240,8 @@ public class BleScanner {
         mConnected = false;
         mInitialized = false;
         if(mGatt != null){
-            mGatt.disconnect();
-            mGatt.close();
+            operationManager.request(new DisconnectOperation(mGatt));
+            handler.postDelayed(GattCloseRun,2000);
         }
     }
-
 }

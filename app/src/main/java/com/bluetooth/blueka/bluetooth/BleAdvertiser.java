@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat;
 
 import com.bluetooth.blueka.Constants;
 import com.bluetooth.blueka.Operation.OperationManager;
+import com.bluetooth.blueka.Operation.WriteCharacteristicOperation;
 import com.bluetooth.blueka.R;
 
 import java.io.UnsupportedEncodingException;
@@ -41,7 +42,7 @@ public class BleAdvertiser {
     private BluetoothGattServer mGattServer;
     private Context context;
     private boolean advertising =  false;
-    private ArrayList<BluetoothDevice> mDevices = new ArrayList();
+    private static ArrayList<BluetoothDevice> mDevices = new ArrayList();
 
 
 
@@ -136,24 +137,38 @@ public class BleAdvertiser {
                     responseNeeded,
                     offset,
                     value);
-            //advertiser will reverse the string and send it back to the scanner
+            //advertiser will see the number of connected device and notify every phone.
             Log.i(TAG,"inside on characterisitic write request in advertiser");
             if (characteristic.getUuid().equals(Constants.CHARACTERISTIC_ECHO_UUID)) {
                 mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
-            }
-            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
-            int num_connected = mDevices.size();
-            String message = Integer.toString(num_connected);
-            byte[] reply = new byte[0];
-            try {
-                reply = message.getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                Log.e(TAG, "Failed to convert message string to byte array");
-            }
+                int num_connected = mDevices.size();
+                String message = Integer.toString(num_connected);
+                byte[] reply = new byte[0];
 
-            characteristic.setValue(reply);
-            for(BluetoothDevice dev : mDevices) {
-                mGattServer.notifyCharacteristicChanged(dev, characteristic, false);
+                try {
+                    reply = message.getBytes("UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    Log.e(TAG, "Failed to convert message string to byte array");
+                }
+                characteristic.setValue(reply);
+
+                for(BluetoothDevice dev : mDevices) {
+                    operationManager.request(new WriteCharacteristicOperation(mGattServer, characteristic, dev));
+                }
+                //
+//                int num_connected = mDevices.size();
+//                String message = Integer.toString(num_connected);
+//                byte[] reply = new byte[0];
+//                try {
+//                    reply = message.getBytes("UTF-8");
+//                } catch (UnsupportedEncodingException e) {
+//                    Log.e(TAG, "Failed to convert message string to byte array");
+//                }
+//
+//                characteristic.setValue(reply);
+//                for(BluetoothDevice dev : mDevices) {
+//                    mGattServer.notifyCharacteristicChanged(dev, characteristic, false);
+//                }
             }
         }
         @Override
@@ -169,7 +184,15 @@ public class BleAdvertiser {
                 }
             }else if(newState == BluetoothProfile.STATE_DISCONNECTED){
                 mDevices.remove(device);
+                Log.i(TAG,"Yes, device removed");
             }
+        }
+        @Override
+        public void onNotificationSent (BluetoothDevice device,
+                                                 int status){
+            super.onNotificationSent(device,status);
+            operationManager.operationCompleted();
+
         }
     }
 

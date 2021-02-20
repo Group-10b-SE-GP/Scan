@@ -4,6 +4,9 @@ import android.bluetooth.BluetoothGatt;
 
 public abstract class Operation {
     protected BluetoothGatt gatt;
+    public Operation(){
+
+    }
     public Operation(BluetoothGatt gatt){
         this.gatt = gatt;
     }
