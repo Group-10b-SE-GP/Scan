@@ -44,10 +44,6 @@ public class BleAdvertiser {
     private boolean advertising =  false;
     private static ArrayList<BluetoothDevice> mDevices = new ArrayList();
 
-
-
-
-
     public BleAdvertiser(Context context){
         this.context = context;
         advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
@@ -57,6 +53,8 @@ public class BleAdvertiser {
         setupServer();
     }
 
+    // setupServer() is called when initialise the advertiser.
+    // Define the server we want to advertise.
     private void setupServer(){
         BluetoothGattService service = new BluetoothGattService(Constants.SERVICE_UUID,BluetoothGattService.SERVICE_TYPE_PRIMARY);
         //write
@@ -68,6 +66,7 @@ public class BleAdvertiser {
         mGattServer.addService(service);
     }
 
+    //startAdvertising() is called when advertiser want to start advertising.
     public void startAdvertising(){
         if(advertising){
             Log.d(Constants.TAG, "Already advertising");
@@ -95,6 +94,8 @@ public class BleAdvertiser {
 
 
     }
+
+    // This define what happen when advertising is failed on success.
     private AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
         @Override
         public void onStartSuccess(AdvertiseSettings settingsInEffect) {
@@ -109,17 +110,22 @@ public class BleAdvertiser {
         }
     };
 
+    // stopAdvertising() is called when you need advertiser to stop advertising.
     public void stopAdvertising(){
         setAdvertising(false);
         advertiser.stopAdvertising(advertisingCallback);
     }
 
     public boolean isAdvertising(){return advertising;}
-
     void setAdvertising(boolean advertising){
         this.advertising = advertising;
     }
 
+    // GattClientCallback is very important thing to define.
+    // Whatever happen during the connection is conducted here.
+    // onCharacteristicWriteRequest() is called when we receive write request from scanner.
+    // onConnectionStateChange is called when device is connected or disconnected.
+    // onNotificationSent is called when a notification is send to one device.
     private class GattServerCallback extends BluetoothGattServerCallback{
         //write
         @Override

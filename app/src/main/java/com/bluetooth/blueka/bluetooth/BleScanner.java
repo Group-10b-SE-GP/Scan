@@ -51,11 +51,14 @@ public class BleScanner {
     private boolean mConnected = false;
     private OperationManager operationManager;
     private GattClientCallback gattClientCallback;
-    //write
     private boolean mInitialized = false;
     private BleAdvertiser bleAdvertiser;
     private Boolean checkScan = false;
 
+    //gatt.close() is needed after gatt.disconnect().
+    //However, the onConnectionStateChange is not triggered sometimes to close the gatt.
+    //We need a Runnable to run it if the onConnectionStateChange is not triggered.
+    //If onConnectionStateChange works, it will cancel this Runnable which also close the gatt.
     private Runnable GattCloseRun= new Runnable(){
         @Override
         public void run()
@@ -65,6 +68,7 @@ public class BleScanner {
         }
     };
 
+    //Constructor.
     public BleScanner(Context context){
         this.context = context;
         operationManager = new OperationManager();
@@ -83,6 +87,7 @@ public class BleScanner {
         Log.d(Constants.TAG, "Bluetooth is switched on");
     }
 
+    //startScanning is call when scanner start scanning.
     public void startScanning(final ScanResultsConsumer scan_results_consumer, long stop_after_ms){
         if(scanning){
             Log.d(Constants.TAG, "Already scanning so ignoring startScanning request");
@@ -127,13 +132,15 @@ public class BleScanner {
         setScanning(true);
         scanner.startScan(filters, settings, scan_callback);
     }
-
+    //stopScanning is call when scanner stop scanning.
     public void stopScanning(){
         setScanning(false);
         Log.d(Constants.TAG,"Stopping scanning");
         scanner.stopScan(scan_callback);
     }
 
+    //Define what happens after scanner have some scan result, also where the scan result store.
+    //Connect the device when a device is found.
     private ScanCallback scan_callback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
@@ -149,10 +156,17 @@ public class BleScanner {
 
     };
 
+    private void connectDevice(BluetoothDevice device){
+        mGatt = device.connectGatt(context, false, gattClientCallback);
+        Log.i(TAG,"connected inside");
+    }
+
     public boolean isScanning(){
         return scanning;
     }
 
+    // setScanning is called when it start scanning or stop scanning
+    // To adjust the UI, and variable.
     private void setScanning(boolean scanning){
         this.scanning = scanning;
         if(!scanning){
@@ -162,12 +176,15 @@ public class BleScanner {
         }
     }
 
-    private void connectDevice(BluetoothDevice device){
-        mGatt = device.connectGatt(context, false, gattClientCallback);
-        Log.i(TAG,"connected inside");
-    }
 
 
+
+    // GattClientCallback is very important thing to define.
+    // Whatever happen during the connection is conducted here.
+    // onConnectionStateChange is called when device is connected or disconnected.
+    // onServiceDiscovered is called when service of connected device is found.
+    // onCharacteristicChanged is called when the advertiser notify.
+    // onCharacteristicWrite is called when writeRequest is successfully sent.
     private class GattClientCallback extends BluetoothGattCallback{
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState){

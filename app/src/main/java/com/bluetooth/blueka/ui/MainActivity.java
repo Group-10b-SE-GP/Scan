@@ -37,7 +37,6 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
     private Handler handler = new Handler();
     private ListAdapter ble_device_list_adapter;
     private BleScanner ble_scanner;
-    public BleAdvertiser ble_advertiser;
     private static final long SCAN_TIMEOUT = 5000;
     private static final int REQUEST_LOCATION = 0;
     private static String[] PERMISSION_LOCATION = {Manifest.permission.ACCESS_COARSE_LOCATION};
@@ -50,15 +49,16 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
         public TextView text;
         public TextView bdaddr;
     }
+
     //onCreate is called when you open the app.
     //savedInstanceState is what the app store when it get closed before.
-    //
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         instance = this;
         setContentView(R.layout.activity_main);
         setButtonText();
+
         //Create a listview and connect it to the interface's list, the listview get data from list adapter.
         ble_device_list_adapter = new ListAdapter();
         ListView listView = (ListView) this.findViewById(R.id.deviceList);
@@ -67,8 +67,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
 
         //Create a scanner.
         ble_scanner = new BleScanner(this.getApplicationContext());
-        //Create a advertiser with server.
-        ble_advertiser =  new BleAdvertiser(this.getApplicationContext());
+
         //Now the button wait and listen for click to action.
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -87,39 +86,9 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
                 startActivity(intent);
             }
         });
-        //ble_advertiser.startAdvertising();
     }
 
-    public static MainActivity getInstance() {
-        return instance;
-    }
-
-    @Override
-    public void candidateBleDevice(BluetoothDevice device, byte[] scan_record, int rssi) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ble_device_list_adapter.addDevice(device);
-                ble_device_list_adapter.notifyDataSetChanged();
-                device_count++;
-            }
-        });
-
-    }
-
-    @Override
-    public void scanningStarted() {
-        setScanState(true);
-    }
-
-    @Override
-    public void scanningStopped() {
-        if(toast != null){
-            toast.cancel();
-        }
-        setScanState(false);
-
-    }
+    //Initialise the button text.
     private void setButtonText(){
         String text = "";
         text = Constants.FIND;
@@ -133,11 +102,47 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
 
     }
 
+    public static MainActivity getInstance() {
+        return instance;
+    }
+
+    //This will be call by the scanner when scanner scan something.
+    //This notify the list to display the device scanned.
+    @Override
+    public void candidateBleDevice(BluetoothDevice device, byte[] scan_record, int rssi) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ble_device_list_adapter.addDevice(device);
+                ble_device_list_adapter.notifyDataSetChanged();
+                device_count++;
+            }
+        });
+
+    }
+    //This will be call by the scanner when scanner start scan to change UI.
+    @Override
+    public void scanningStarted() {
+        setScanState(true);
+    }
+
+    //This will be call by the scanner when scanner stop scan to change UI.
+    @Override
+    public void scanningStopped() {
+        if(toast != null){
+            toast.cancel();
+        }
+        setScanState(false);
+
+    }
+
+    //This is called to change button text.
     private void setScanState(boolean value){
         ble_scanning = value;
         ((Button) this.findViewById(R.id.scanButton)).setText(value ? Constants.STOP_SCANNING:Constants.FIND);
     }
 
+    //Defining the list displaying the available scanned devices to connect.
     private class ListAdapter extends BaseAdapter{
         private ArrayList<BluetoothDevice> ble_devices;
         public ListAdapter(){
@@ -196,6 +201,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
         }
     }
 
+    //onScan will be called when the user press the button.
     public void onScan(View view){
         if (!ble_scanner.isScanning()){
             device_count = 0;
@@ -214,6 +220,23 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
 
         }else{
             ble_scanner.stopScanning();
+        }
+    }
+
+    //startScanning will be call when onScan call it.
+    private void startScanning(){
+        if(permission_granted){
+            runOnUiThread(new Runnable(){
+                @Override
+                public void run(){
+                    ble_device_list_adapter.clear();
+                    ble_device_list_adapter.notifyDataSetChanged();
+                }
+            });
+            simpleToast(Constants.SCANNING,1200);
+            ble_scanner.startScanning(this, SCAN_TIMEOUT);
+        }else{
+            Log.i(Constants.TAG, "Permission to perform Bluetooth scanning was not yet granted");
         }
     }
 
@@ -241,6 +264,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
         }
 
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
         if(requestCode == REQUEST_LOCATION){
@@ -262,20 +286,5 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
         toast = Toast.makeText(this, message, duration);
         toast.setGravity(Gravity.CENTER, 0,0);
         toast.show();
-    }
-    private void startScanning(){
-        if(permission_granted){
-            runOnUiThread(new Runnable(){
-                @Override
-                public void run(){
-                    ble_device_list_adapter.clear();
-                    ble_device_list_adapter.notifyDataSetChanged();
-                }
-            });
-            simpleToast(Constants.SCANNING,1200);
-            ble_scanner.startScanning(this, SCAN_TIMEOUT);
-        }else{
-            Log.i(Constants.TAG, "Permission to perform Bluetooth scanning was not yet granted");
-        }
     }
 }
