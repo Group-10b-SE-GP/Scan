@@ -31,6 +31,7 @@ import com.bluetooth.blueka.bluetooth.BleScanner;
 import com.bluetooth.blueka.bluetooth.ScanResultsConsumer;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements ScanResultsConsumer {
     private boolean ble_scanning = false;
@@ -99,8 +100,19 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
                 ((TextView) MainActivity.this.findViewById(R.id.scanButton)).setText(button_text);
             }
         });
-
     }
+
+    //set to which to scan and connect
+    public UUID numOfConnectWanted(){
+        //if(seekBarNum == 2){
+        //    return Constants.SERVICE_UUID2;
+        //}else if(seekBarNum == 3){
+        //    return Constants.SERVICE_UUID3;
+        // }
+        return Constants.SERVICE_UUID;
+    }
+
+
 
     public static MainActivity getInstance() {
         return instance;
@@ -234,6 +246,7 @@ public class MainActivity extends AppCompatActivity implements ScanResultsConsum
                 }
             });
             simpleToast(Constants.SCANNING,1200);
+            //disabled button from scanning
             ble_scanner.startScanning(this, SCAN_TIMEOUT);
         }else{
             Log.i(Constants.TAG, "Permission to perform Bluetooth scanning was not yet granted");

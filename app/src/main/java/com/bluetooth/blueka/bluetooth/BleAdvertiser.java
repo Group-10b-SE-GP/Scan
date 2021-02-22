@@ -145,11 +145,18 @@ public class BleAdvertiser {
                     value);
             //advertiser will see the number of connected device and notify every phone.
             Log.i(TAG,"inside on characterisitic write request in advertiser");
+
             if (characteristic.getUuid().equals(Constants.CHARACTERISTIC_ECHO_UUID)) {
                 mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
                 int num_connected = mDevices.size();
                 String message = Integer.toString(num_connected);
                 byte[] reply = new byte[0];
+
+                //if(num_connected == seekbarNum){
+                //  send play music message
+                // }else{
+                //   send the number of connected message
+                // }
 
                 try {
                     reply = message.getBytes("UTF-8");
